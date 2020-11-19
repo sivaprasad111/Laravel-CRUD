@@ -1,0 +1,379 @@
+Connect Database Configuration
+ Create Table in Laravel 5.8
+Create Resource Route in Laravel 5.8
+ Create Model
+ Create Controller
+ Create Blade Files
+
+composer create-project --prefer-dist laravel/laravel blog
+
+
+//Connect Database Configuration
+//IN .env
+
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=Database Name
+DB_USERNAME=User Name (root)
+DB_PASSWORD=Password
+
+Create Table in Laravel
+php artisan make:migration create_blogs_table --create=blogs
+
+database/migrations
+
+<?php
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
+class CreateBlogsTable extends Migration
+{
+/**
+* Run the migrations.
+*
+* @return void
+*/
+public function up()
+{
+Schema::create('blogs', function (Blueprint $table) {
+$table->increments('id');
+$table->string('title');
+$table->text('content');
+$table->timestamps();
+});
+}
+/**
+* Reverse the migrations.
+*
+* @return void
+*/
+public function down()
+{
+Schema::dropIfExists('blogs');
+}
+}
+
+Create Resource Route in Laravel
+Route::resource('blogs','blogController');
+
+Create Model
+php artisan make:model Blog
+
+app/Blog.php
+
+<?php
+namespace App;
+use Illuminate\Database\Eloquent\Model;
+class Blog extends Model
+{ protected $fillable = [ 'title', 'content' ];
+}
+
+
+Create Controller
+
+php artisan make:controller blogController --resource
+
+// app/Http/Controllers/blogController.php.
+
+//.index()
+
+//create()
+
+//store()
+
+//show()
+
+//edit()
+
+//update()
+
+//destroy()
+
+<?php
+namespace App\Http\Controllers;
+use App\Blog;
+use Illuminate\Http\Request;
+class blogController extends Controller
+{
+/**
+* Display a listing of the resource.
+*
+* @return \Illuminate\Http\Response
+*/
+public function index()
+{
+$blogs = Blog::orderby('id', 'desc')->get();
+return view('blogs.index',compact('blogs'));
+}
+/**
+* Show the form for creating a new resource.
+*
+* @return \Illuminate\Http\Response
+*/
+public function create()
+{
+return view('blogs.create');
+}
+/**
+* Store a newly created resource in storage.
+*
+* @param \Illuminate\Http\Request $request
+* @return \Illuminate\Http\Response
+*/
+public function store(Request $request)
+{
+$request->validate([
+'title' => 'required',
+'content' => 'required',
+]);
+Blog::create($request->all());
+return redirect()->route('blogs.index')
+->with('success','blogs created successfully.');
+}
+/**
+* Display the specified resource.
+*
+* @param \App\Blog $blog
+* @return \Illuminate\Http\Response
+*/
+public function show(Blog $blog)
+{
+return view('blogs.show',compact('blog'));
+}
+/**
+* Show the form for editing the specified resource.
+*
+* @param \App\Blog $blog
+* @return \Illuminate\Http\Response
+*/
+public function edit(Blog $blog)
+{
+return view('blogs.edit',compact('blog'));
+}
+/**
+* Update the specified resource in storage.
+*
+* @param \Illuminate\Http\Request $request
+* @param \App\Blog $blog
+* @return \Illuminate\Http\Response
+*/
+public function update(Request $request, Blog $blog)
+{
+$request->validate([
+'title' => 'required',
+'content' => 'required',
+]);
+$blog->update($request->all());
+return redirect()->route('blogs.index')
+->with('success','blogs updated successfully');
+}
+/**
+* Remove the specified resource from storage.
+*
+* @param \App\Blog $blog
+* @return \Illuminate\Http\Response
+*/
+public function destroy(Blog $blog)
+{
+$blog->delete();
+return redirect()->route('blogs.index')
+->with('success','Blog deleted successfully');
+}
+}
+
+Create Blade Files
+
+//layout.blade.php
+
+// index.blade.php
+
+//create.blade.php
+
+// edit.blade.php
+
+//show.blade.php
+
+//resources/views/blogs/layout.blade.php
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>Laravel 5.8 CRUD Generator Application</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0-alpha/css/bootstrap.css" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+@yield('content')
+</div>
+</body>
+</html>
+
+//resources/views/blogs/index.blade.php
+@extends('blogs.layout')
+@section('content')
+<div class="row">
+<div class="col-lg-12 margin-tb">
+<div class="pull-left">
+<h2>Laravel 5.8 CRUD Example</h2>
+</div>
+<div class="pull-right">
+<a class="btn btn-success" href="{{ route('blogs.create') }}"> Create New Blog</a>
+</div>
+</div>
+</div>
+@if ($message = Session::get('success'))
+<div class="alert alert-success">
+<p>{{ $message }}</p>
+</div>
+@endif
+<table class="table table-bordered">
+<tr>
+<th>Title</th>
+<th>Content</th>
+<th width="280px">Action</th>
+</tr>
+@foreach ($blogs as $blog)
+<tr>
+<td>{{ $blog->title }}</td>
+<td>{{ $blog->content }}</td>
+<td>
+<form action="{{ route('blogs.destroy',$blog->id) }}" method="POST">
+<a class="btn btn-info" href="{{ route('blogs.show',$blog->id) }}">Show</a>
+<a class="btn btn-primary" href="{{ route('blogs.edit',$blog->id) }}">Edit</a>
+@csrf
+@method('DELETE')
+<button type="submit" class="btn btn-danger">Delete</button>
+</form>
+</td>
+</tr>
+@endforeach
+</table>
+@endsection
+
+
+
+//resources/views/blogs/create.blade.php
+
+@extends('blogs.layout')
+@section('content')
+<div class="row">
+<div class="col-lg-12 margin-tb">
+<div class="pull-left">
+<h2>Add New Blogs</h2>
+</div>
+<div class="pull-right">
+<a class="btn btn-primary" href="{{ route('blogs.index') }}"> Back</a>
+</div>
+</div>
+</div>
+@if ($errors->any())
+<div class="alert alert-danger">
+<strong>Whoops!</strong> There were some problems with your input.<br><br>
+<ul>
+@foreach ($errors->all() as $error)
+<li>{{ $error }}</li>
+@endforeach
+</ul>
+</div>
+@endif
+<form action="{{ route('blogs.store') }}" method="POST">
+@csrf
+<div class="row">
+<div class="col-xs-12 col-sm-12 col-md-12">
+<div class="form-group">
+<strong>Title:</strong>
+<input type="text" name="title" class="form-control" placeholder="title">
+</div>
+</div>
+<div class="col-xs-12 col-sm-12 col-md-12">
+<div class="form-group">
+<strong>Content:</strong>
+<textarea class="form-control" style="height:150px" name="content" placeholder="Content"></textarea>
+</div>
+</div>
+<div class="col-xs-12 col-sm-12 col-md-12 text-center">
+<button type="submit" class="btn btn-primary">Submit</button>
+</div>
+</div>
+</form>
+@endsection
+
+//resources/views/blogs/edit.blade.php
+@extends('blogs.layout')
+@section('content')
+<div class="row">
+<div class="col-lg-12 margin-tb">
+<div class="pull-left">
+<h2>Edit Blogs</h2>
+</div>
+<div class="pull-right">
+<a class="btn btn-primary" href="{{ route('blogs.index') }}"> Back</a>
+</div>
+</div>
+</div>
+@if ($errors->any())
+<div class="alert alert-danger">
+<strong>Whoops!</strong> There were some problems with your input.<br><br>
+<ul>
+@foreach ($errors->all() as $error)
+<li>{{ $error }}</li>
+@endforeach
+</ul>
+</div>
+@endif
+<form action="{{ route('blogs.update',$blog->id) }}" method="POST">
+@csrf
+@method('PUT')
+<div class="row">
+<div class="col-xs-12 col-sm-12 col-md-12">
+<div class="form-group">
+<strong>Title:</strong>
+<input type="text" name="title" value="{{ $blog->title }}" class="form-control" placeholder="Name">
+</div>
+</div>
+<div class="col-xs-12 col-sm-12 col-md-12">
+<div class="form-group">
+<strong>Content:</strong>
+<textarea class="form-control" style="height:150px" name="content" placeholder="Detail">{{ $blog->content }}</textarea>
+</div>
+</div>
+<div class="col-xs-12 col-sm-12 col-md-12 text-center">
+<button type="submit" class="btn btn-primary">Submit</button>
+</div>
+</div>
+</form>
+@endsection
+
+
+//resources/views/blogs/show.blade.php
+@extends('blogs.layout')
+@section('content')
+<div class="row">
+<div class="col-lg-12 margin-tb">
+<div class="pull-left">
+<h2> Show Blogs</h2>
+</div>
+<div class="pull-right">
+<a class="btn btn-primary" href="{{ route('blogs.index') }}"> Back</a>
+</div>
+</div>
+</div>
+<div class="row">
+<div class="col-xs-12 col-sm-12 col-md-12">
+<div class="form-group">
+<strong>Title:</strong>
+{{ $blog->title }}
+</div>
+</div>
+<div class="col-xs-12 col-sm-12 col-md-12">
+<div class="form-group">
+<strong>Content:</strong>
+{{ $blog->content }}
+</div>
+</div>
+</div>
+@endsection
+
+php artisan serve
